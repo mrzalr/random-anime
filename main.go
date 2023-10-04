@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gocolly/colly"
 )
@@ -19,6 +21,7 @@ func main() {
 	mux.Handle("/", Logger(JSON(HandlerHome())))
 	mux.Handle("/anime", Logger(JSON(HandlerAnime(c))))
 
-	log.Println("server is running on port :8080")
-	http.ListenAndServe(":8080", mux)
+	port := os.Getenv("PORT")
+	log.Printf("server is running on port :%s\n", port)
+	http.ListenAndServe(fmt.Sprintf(":%s", port), mux)
 }
