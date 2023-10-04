@@ -1,45 +1,24 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gocolly/colly"
 )
 
+type res map[string]string
+
 func main() {
 	c := colly.NewCollector()
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Printf("visiting %s\n", r.URL.String())
+		log.Printf("visiting %s\n", r.URL.String())
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	mux := http.NewServeMux()
+	mux.Handle("/", JSON(HandlerHome()))
+	mux.Handle("/anime", JSON(HandlerAnime(c)))
 
-		response := map[string]string{
-			"message": "Welcome to random anime suggestion API ! &&",
-		}
-
-		w.WriteHeader(http.StatusOK)
-
-		enc := json.NewEncoder(w)
-		enc.SetEscapeHTML(true)
-		enc.Encode(response)
-	})
-
-	http.HandleFunc("/anime", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-
-		anime := GetAnime(c)
-
-		w.WriteHeader(http.StatusOK)
-
-		enc := json.NewEncoder(w)
-		enc.SetEscapeHTML(true)
-		enc.Encode(anime)
-
-	})
-
-	http.ListenAndServe(":8080", nil)
+	log.Println("server is running on port :8080")
+	http.ListenAndServe(":8080", mux)
 }
