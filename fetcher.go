@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -43,7 +42,7 @@ type AnimeData struct {
 	Reviews       []Review
 }
 
-func getAnimeDetail(c *colly.Collector, href string) {
+func getAnimeDetail(c *colly.Collector, href string) AnimeData {
 	result := map[string]string{}
 	genres := []string{}
 	reviews := []Review{}
@@ -139,11 +138,11 @@ func getAnimeDetail(c *colly.Collector, href string) {
 		Reviews:       reviews,
 	}
 
-	b, _ := json.Marshal(animeData)
-	fmt.Println(string(b))
+	return animeData
 }
 
-func GetAnime(c *colly.Collector) {
+func GetAnime(c *colly.Collector) AnimeData {
+	var animeData AnimeData
 	limit := GetRandomPage()
 	animeNum := GetRandomNumber(1, 50)
 	counter := 0
@@ -160,11 +159,13 @@ func GetAnime(c *colly.Collector) {
 		}
 
 		href := h.Attr("href")
-		getAnimeDetail(c, href)
+		animeData = getAnimeDetail(c, href)
 	})
 
 	if limit != 0 {
 		baseUrl = fmt.Sprintf("%s?limit=%d", baseUrl, limit)
 	}
 	c.Visit(baseUrl)
+
+	return animeData
 }
