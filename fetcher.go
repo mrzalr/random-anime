@@ -42,12 +42,13 @@ type AnimeData struct {
 	Reviews       []Review
 }
 
-func getAnimeDetail(c *colly.Collector, href string) AnimeData {
+func getAnimeDetail(c *colly.Collector, href string) (AnimeData, error) {
 	result := map[string]string{}
 	genres := []string{}
 	reviews := []Review{}
 	reviewCount := 3
 
+	// scrape all anime info from side panel
 	c.OnHTML("div.spaceit_pad", func(h *colly.HTMLElement) {
 		class := strings.Split(h.Attr("class"), " ")
 		if len(class) > 1 || class[0] != "spaceit_pad" {
@@ -66,14 +67,17 @@ func getAnimeDetail(c *colly.Collector, href string) AnimeData {
 		result[res[0]] = res[1]
 	})
 
+	// scrape anime title
 	c.OnHTML("h1.title-name.h1_bold_none", func(h *colly.HTMLElement) {
 		result["English"] = h.ChildText("strong")
 	})
 
+	// scrape anime image
 	c.OnHTML("div.leftside", func(h *colly.HTMLElement) {
 		result["ImageUrl"] = h.ChildAttr("img.lazyload", "data-src")
 	})
 
+	// scrape anime genres
 	c.OnHTML("span", func(h *colly.HTMLElement) {
 		if h.Attr("itemprop") != "genre" {
 			return
@@ -82,19 +86,23 @@ func getAnimeDetail(c *colly.Collector, href string) AnimeData {
 		genres = append(genres, h.Text)
 	})
 
+	// scrape anime scores
 	c.OnHTML("div.fl-l.score", func(h *colly.HTMLElement) {
 		result["UserVoteCount"] = h.Attr("data-user")
 		result["Score"] = h.Text
 	})
 
+	// scrape anime rank
 	c.OnHTML("span.numbers.ranked", func(h *colly.HTMLElement) {
 		result["Ranked"] = h.ChildText("strong")[1:]
 	})
 
+	// scrape anime popularity
 	c.OnHTML("span.numbers.popularity", func(h *colly.HTMLElement) {
 		result["Popularity"] = h.ChildText("strong")[1:]
 	})
 
+	// scrape anime synopsis
 	c.OnHTML("p", func(h *colly.HTMLElement) {
 		if h.Attr("itemprop") != "description" {
 			return
@@ -103,6 +111,7 @@ func getAnimeDetail(c *colly.Collector, href string) AnimeData {
 		result["Synopsis"] = h.Text
 	})
 
+	// scrape anime reviews
 	c.OnHTML("div.review-element", func(h *colly.HTMLElement) {
 		if len(reviews) >= reviewCount {
 			return
@@ -117,7 +126,10 @@ func getAnimeDetail(c *colly.Collector, href string) AnimeData {
 		reviews = append(reviews, r)
 	})
 
-	c.Visit(href)
+	err := c.Visit(href)
+	if err != nil {
+		return AnimeData{}, err
+	}
 
 	animeData := AnimeData{
 		Title:         AnimeTitle{En: result["English"], Jp: result["Japanese"], Syn: result["Synonyms"]},
@@ -138,15 +150,18 @@ func getAnimeDetail(c *colly.Collector, href string) AnimeData {
 		Reviews:       reviews,
 	}
 
-	return animeData
+	return animeData, nil
 }
 
-func GetAnime(c *colly.Collector) AnimeData {
+func GetAnime(c *colly.Collector) (AnimeData, error) {
 	var animeData AnimeData
+	var err error
+
 	limit := GetRandomPage()
 	animeNum := GetRandomNumber(1, 50)
 	counter := 0
 
+	// scrape random anime href
 	c.OnHTML("a[href].hoverinfo_trigger", func(h *colly.HTMLElement) {
 		class := strings.Split(h.Attr("class"), " ")
 		if len(class) > 1 || class[0] != "hoverinfo_trigger" {
@@ -159,13 +174,18 @@ func GetAnime(c *colly.Collector) AnimeData {
 		}
 
 		href := h.Attr("href")
-		animeData = getAnimeDetail(c, href)
+		animeData, err = getAnimeDetail(c, href)
+
 	})
 
 	if limit != 0 {
 		baseUrl = fmt.Sprintf("%s?limit=%d", baseUrl, limit)
 	}
-	c.Visit(baseUrl)
 
-	return animeData
+	err = c.Visit(baseUrl)
+	if err != nil {
+		return AnimeData{}, err
+	}
+
+	return animeData, nil
 }

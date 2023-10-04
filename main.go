@@ -16,8 +16,8 @@ func main() {
 	})
 
 	mux := http.NewServeMux()
-	mux.Handle("/", JSON(HandlerHome()))
-	mux.Handle("/anime", JSON(HandlerAnime(c)))
+	mux.Handle("/", Logger(JSON(HandlerHome())))
+	mux.Handle("/anime", Logger(JSON(HandlerAnime(c))))
 
 	log.Println("server is running on port :8080")
 	http.ListenAndServe(":8080", mux)
