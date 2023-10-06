@@ -18,8 +18,8 @@ func main() {
 	})
 
 	mux := http.NewServeMux()
-	mux.Handle("/", Logger(JSON(HandlerHome())))
-	mux.Handle("/anime", Logger(JSON(HandlerAnime(c))))
+	mux.Handle("/", CORS(Logger(JSON(HandlerHome()))))
+	mux.Handle("/anime", CORS(Logger(JSON(HandlerAnime(c)))))
 
 	port := os.Getenv("PORT")
 	log.Printf("server is running on port :%s\n", port)
